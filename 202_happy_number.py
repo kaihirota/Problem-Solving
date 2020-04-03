@@ -51,3 +51,23 @@ class Solution:
                 record.add(result)
 
         return self.isHappy(result, record=record)
+
+
+""" andrew's """
+def isHappy(self, n: int) -> bool:
+
+    seen = set()
+
+    while n > 1:
+
+        if n in seen:
+            return False
+        seen.add(n)
+
+        total = 0
+        while n > 0:
+            n, remainder = divmod(n, 10)
+            total += pow(remainder, 2)
+        n = total
+
+    return True
