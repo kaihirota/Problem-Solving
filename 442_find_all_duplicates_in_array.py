@@ -33,3 +33,20 @@ class Solution:
                 ret.append(elem)
 
         return ret
+
+
+    @staticmethod
+    def findDuplicates(nums: List[int]) -> List[int]:
+        ret = []
+
+        for idx in range(len(nums)):
+            while nums[idx] != idx + 1:
+                if nums[nums[idx]-1] == nums[idx]:
+                    break
+                nums[nums[idx]-1], nums[idx] = nums[idx], nums[nums[idx]-1]
+
+        for idx, elem in enumerate(nums):
+            if idx + 1 != elem:
+                ret.append(elem)
+
+        return ret
