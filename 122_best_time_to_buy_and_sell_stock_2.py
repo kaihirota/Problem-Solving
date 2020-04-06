@@ -41,7 +41,6 @@ class Solution:
 
         current_min = prices[0]
         balance = 0
-        last_action = None
 
         for i in range(len(prices)):
 
