@@ -64,3 +64,35 @@ class MinStack:
 # obj.pop()
 # param_3 = obj.top()
 # param_4 = obj.getMin()
+
+"""
+Andrew's solution
+"""
+class MinStack:
+
+    def __init__(self):
+        """
+        initialize your data structure here.
+        """
+        self.min_st = []
+        self.st = []
+
+
+    def push(self, x: int) -> None:
+        if self.min_st == [] or self.min_st[-1] >= x:
+            self.min_st += x,
+        self.st += x,
+
+
+    def pop(self) -> None:
+        if self.min_st[-1] == self.st[-1]:
+            self.min_st.pop()
+        return self.st.pop()
+
+
+    def top(self) -> int:
+        return self.st[-1]
+
+
+    def getMin(self) -> int:
+        return self.min_st[-1]
