@@ -33,8 +33,8 @@ class Solution:
                 ret.append(ret[0] // nums[i] * nums[0])
 
         return ret
-    
-    
+
+
 # solution
 class Solution:
     # @param {integer[]} nums
@@ -43,7 +43,7 @@ class Solution:
         p = 1
         n = len(nums)
         output = []
-        for i in range(0,n):
+        for i in range(n):
             output.append(p)
             p = p * nums[i]
         p = 1

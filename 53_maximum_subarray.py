@@ -18,7 +18,8 @@ solution: Kadane's Algorithm
 """
 
 class Solution:
-    def maxSubArray(self, nums: List[int]) -> int:
+    # def maxSubArray(self, nums: List[int]) -> int:
+    def maxSubArray(self, nums):
         current_max = nums[0]
         global_max = nums[0]
 
@@ -29,3 +30,5 @@ class Solution:
                 global_max = current_max
 
         return global_max
+
+print(Solution().maxSubArray([-2,1,-3,4,-1,2,1,-5,4]))
