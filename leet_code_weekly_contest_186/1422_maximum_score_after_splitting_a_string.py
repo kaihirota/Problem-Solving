@@ -1,10 +1,7 @@
 """
-5392. Maximum Score After Splitting a StringMy SubmissionsBack to Contest
-User Accepted:0
-User Tried:0
-Total Accepted:0
-Total Submissions:0
-Difficulty:Easy
+1422. Maximum Score After Splitting a String
+https://leetcode.com/problems/maximum-score-after-splitting-a-string/
+
 Given a string s of zeros and ones, return the maximum score after splitting the string into two non-empty substrings (i.e. left substring and right substring).
 
 The score after splitting a string is the number of zeros in the left substring plus the number of ones in the right substring.
@@ -37,7 +34,6 @@ Constraints:
 
 2 <= s.length <= 500
 The string s consists of characters '0' and '1' only.
-
 """
 class Solution:
     def maxScore(self, s: str) -> int:

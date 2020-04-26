@@ -1,10 +1,7 @@
 """
-5393. Maximum Points You Can Obtain from CardsMy SubmissionsBack to Contest
-User Accepted:133
-User Tried:205
-Total Accepted:133
-Total Submissions:220
-Difficulty:Medium
+1423. Maximum Points You Can Obtain from Cards
+https://leetcode.com/problems/maximum-points-you-can-obtain-from-cards/
+
 There are several cards arranged in a row, and each card has an associated number of points The points are given in the integer array cardPoints.
 
 In one step, you can take one card from the beginning or from the end of the row. You have to take exactly k cards.
