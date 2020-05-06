@@ -1,15 +1,15 @@
 from binary_search_tree import TreeNode, BinarySearchTree
+from collections.abc import Iterable
 
 class AVLTree(BinarySearchTree):
     def __init__(self):
         super().__init__()
 
-    def getHeight(self, node):
-        print('get height')
+    def getHeight(self, node=None):
         if not node:
             return 0
 
-        return node.height
+        return 1 + max(self.getHeight(node.left), self.getHeight(node.right))
 
     def getBalance(self, node):
         if not node:
@@ -26,11 +26,6 @@ class AVLTree(BinarySearchTree):
         y.left = z
         z.right = T2
 
-        z.height = 1 + max(self.getHeight(z.left),
-                        self.getHeight(z.right))
-        y.height = 1 + max(self.getHeight(y.left),
-                        self.getHeight(y.right))
-
         return y
 
     def rightRotate(self, z):
@@ -42,11 +37,6 @@ class AVLTree(BinarySearchTree):
         y.right = z
         z.left = T3
 
-        z.height = 1 + max(self.getHeight(z.left),
-                        self.getHeight(z.right))
-        y.height = 1 + max(self.getHeight(y.left),
-                        self.getHeight(y.right))
-
         return y
 
     def insert_one(self, value, node=None):
@@ -55,74 +45,65 @@ class AVLTree(BinarySearchTree):
             return
 
         new_node = TreeNode(value)
+
         if node == None:
             node = self.root
 
         if value < node.val:
             if node.left == None:
+                new_node.parent = node
                 node.left = new_node
             else:
                 self.insert_one(value, node.left)
                 return
         else:
             if node.right == None:
+                new_node.parent = node
                 node.right = new_node
             else:
                 self.insert_one(value, node.right)
                 return
 
-        node.height = 1 + max(self.getHeight(node.left),
-                        self.getHeight(node.right))
-
         balanceFactor = self.getBalance(node)
-
         if balanceFactor > 1:
-            if value < node.left.val:
-                self.rightRotate(node)
-            else:
+            if value >= node.left.value:
                 node.left = self.leftRotate(node.left)
-                self.rightRotate(node)
-
+            node = self.rightRotate(node)
         elif balanceFactor < -1:
-            if value > node.right.val:
-                self.leftRotate(node)
-            else:
-                node.right = self.rightRotate(node.right)
-                self.leftRotate(node)
+            if value <= node.right.value:
+                node.right = self.leftRotate(node.right)
+            node = self.leftRotate(node)
 
-        new_node.parent = node
+        balanceFactor = self.getBalance(self.root)
+        if balanceFactor > 1:
+            self.root = self.rightRotate(self.root)
+        elif balanceFactor < -1:
+            self.root = self.leftRotate(self.root)
 
     def remove(self, node, value):
-
         if not node:
-            return node
-
+            return None
         elif value < node.val:
             node.left = self.remove(node.left, value)
-
         elif value > node.val:
             node.right = self.remove(node.right, value)
-
         else:
             if node.left is None:
                 temp = node.right
                 node = None
                 return temp
-
             elif node.right is None:
                 temp = node.left
                 node = None
                 return temp
-
-            temp = self.get_min(node.right)
-            node.val = temp.val
-            node.right = self.remove(node.right, temp.val)
+            else:
+                # if neither children are None, float up the smallest value on right side to current node, and resume recursion
+                temp = self.get_min(node.right)
+                node.val = temp.val
+                node.right = self.remove(node.right, temp.val)
 
         if node is None:
             return node
-
-        node.height = 1 + max(self.getHeight(node.left),
-                            self.getHeight(node.right))
 
         balanceFactor = self.getBalance(node)
 
@@ -132,6 +113,7 @@ class AVLTree(BinarySearchTree):
             else:
                 node.left = self.leftRotate(node.left)
                 self.rightRotate(node)
+
         elif balanceFactor < -1:
             if self.getBalance(node.right) <= 0:
                 self.leftRotate(node)
@@ -143,8 +125,8 @@ class AVLTree(BinarySearchTree):
 
 
 if __name__ == '__main__':
-    # nums = list(range(10))
-    nums = [3, 5, 1, 1, 4, 6, 8, 5, -4, -2, -8]
+    nums = list(range(10))
+    # nums = [3, 5, 1, 1, 4, 6, 8, 5, -4, -2, -8]
     # nums = [33, 13, 52, 9, 21, 61, 8, 11]
     avl = AVLTree()
     avl.insert(nums)
