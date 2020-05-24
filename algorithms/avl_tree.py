@@ -39,6 +39,29 @@ class AVLTree(BinarySearchTree):
 
         return y
 
+    def update(self):
+        nodes = [self.root]
+
+        while nodes:
+            node = nodes.pop()
+            node = self.maintain_balance(node)
+            if node.left:
+                nodes.append(node.left)
+            if node.right:
+                nodes.append(node.right)
+
+    def maintain_balance(self, node):
+        balanceFactor = self.getBalance(node)
+        if balanceFactor > 1:
+            if node.left and self.getBalance(node.left) < -1:
+                node.left = self.leftRotate(node.left)
+            node = self.rightRotate(node)
+        elif balanceFactor < -1:
+            if node.right and self.getBalance(node.right) < -1:
+                node.right = self.leftRotate(node.right)
+            node = self.leftRotate(node)
+        return node
+
     def insert_one(self, value, node=None):
         if self.empty():
             self.root = TreeNode(value)
@@ -55,30 +78,14 @@ class AVLTree(BinarySearchTree):
                 node.left = new_node
             else:
                 self.insert_one(value, node.left)
-                return
         else:
             if node.right == None:
                 new_node.parent = node
                 node.right = new_node
             else:
                 self.insert_one(value, node.right)
-                return
 
-        balanceFactor = self.getBalance(node)
-        if balanceFactor > 1:
-            if value >= node.left.value:
-                node.left = self.leftRotate(node.left)
-            node = self.rightRotate(node)
-        elif balanceFactor < -1:
-            if value <= node.right.value:
-                node.right = self.leftRotate(node.right)
-            node = self.leftRotate(node)
-
-        balanceFactor = self.getBalance(self.root)
-        if balanceFactor > 1:
-            self.root = self.rightRotate(self.root)
-        elif balanceFactor < -1:
-            self.root = self.leftRotate(self.root)
+        self.update()
 
     def remove(self, node, value):
         if not node:
@@ -105,21 +112,7 @@ class AVLTree(BinarySearchTree):
         if node is None:
             return node
 
-        balanceFactor = self.getBalance(node)
-
-        if balanceFactor > 1:
-            if self.getBalance(node.left) >= 0:
-                self.rightRotate(node)
-            else:
-                node.left = self.leftRotate(node.left)
-                self.rightRotate(node)
-
-        elif balanceFactor < -1:
-            if self.getBalance(node.right) <= 0:
-                self.leftRotate(node)
-            else:
-                node.right = self.rightRotate(node.right)
-                self.leftRotate(node)
+        self.update()
 
         return node
 

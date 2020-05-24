@@ -8,7 +8,7 @@ class TreeNode:
         self.left = None
         self.right = None
         self.parent = None
-        self.height = 1
+        # self.height = 1
 
     def __repr__(self):
         if self.left is None and self.right is None:
@@ -56,16 +56,17 @@ class BinarySearchTree:
 
         if value < node.val:
             if node.left == None:
+                new_node.parent = node
                 node.left = new_node
             else:
                 self.insert_one(value, node.left)
         else:
             if node.right == None:
+                new_node.parent = node
                 node.right = new_node
             else:
                 self.insert_one(value, node.right)
 
-        new_node.parent = node
 
     def remove(self, value):
         node = self.search(value)  # Look for the node with that label
