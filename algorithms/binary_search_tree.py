@@ -8,7 +8,6 @@ class TreeNode:
         self.left = None
         self.right = None
         self.parent = None
-        # self.height = 1
 
     def __repr__(self):
         if self.left is None and self.right is None:
@@ -26,7 +25,7 @@ class BinarySearchTree:
         """
         return str(self.root)
 
-    def __reassign_nodes(self, node, new_children):
+    def __reassign_nodes(self, node: TreeNode, new_children: TreeNode):
         if new_children is not None:  # reset its kids
             new_children.parent = node.parent
         if node.parent is not None:  # reset its parent
@@ -45,7 +44,7 @@ class BinarySearchTree:
             else:
                 self.insert_one(value)
 
-    def insert_one(self, value, node=None):
+    def insert_one(self, value, node: TreeNode=None):
         if self.empty():
             self.root = TreeNode(value)
             return None
@@ -96,13 +95,13 @@ class BinarySearchTree:
                 node = node.left if value < node.val else node.right
             return node
 
-    def is_right(self, node):
+    def is_right(self, node: TreeNode):
         return node == node.parent.right
 
     def empty(self):
         return self.root is None
 
-    def get_max(self, node=None):
+    def get_max(self, node: TreeNode=None):
         """
         We go deep on the right branch
         """
@@ -113,7 +112,7 @@ class BinarySearchTree:
         else:
             return self.get_max(node.right)
 
-    def get_min(self, node=None):
+    def get_min(self, node: TreeNode=None):
         """
         We go deep on the left branch
         """
@@ -124,7 +123,7 @@ class BinarySearchTree:
         else:
             return self.get_max(node.left)
 
-    def preorder_traverse(self, node):
+    def preorder_traverse(self, node: TreeNode):
         if node is not None:
             yield node  # Preorder Traversal
             yield from self.preorder_traverse(node.left)

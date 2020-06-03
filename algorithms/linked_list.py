@@ -1,19 +1,6 @@
-"""
-https://leetcode.com/problems/reverse-linked-list/
-
-206. Reverse Linked List
-
-Reverse a singly linked list.
-
-Example:
-
-Input: 1->2->3->4->5->NULL
-Output: 5->4->3->2->1->NULL
-Follow up:
-
-A linked list can be reversed either iteratively or recursively. Could you implement both?
-"""
-import random
+from collections.abc import Iterable
+import numpy as np
+from typing import List
 
 class Node:
     def __init__(self, value = None):
@@ -47,7 +34,7 @@ class LinkedList:
             yield current_node
             current_node = current_node.next
 
-    def get_values(self):
+    def get_values(self) -> List:
         vals = []
         current_node = self.head
 
@@ -57,7 +44,18 @@ class LinkedList:
 
         return vals
 
-    def insert(self, value):
+    def insert(self, *values):
+        if type(values) == np.ndarray:
+            values = values.tolist()
+
+        for value in values:
+            if isinstance(value, Iterable):
+                for item in value:
+                    self.insert_one(item)
+            else:
+                self.insert_one(value)
+
+    def insert_one(self, value):
         newnode = Node(value=value)
 
         if self.head == None:
@@ -66,7 +64,7 @@ class LinkedList:
             newnode.next = self.head
             self.head = newnode
 
-    def search(self, value):
+    def search(self, value) -> bool:
         current_node = self.head
 
         while current_node:
@@ -74,6 +72,22 @@ class LinkedList:
                 return True
             else:
                 current_node = current_node.next
+
+        return False
+
+    def remove(self, value):
+        current_node = self.head
+
+        while current_node:
+            if current_node.value == value:
+                if current_node.next is None:
+                    prev_node.next = None
+                else:
+                    prev_node.next = current_node.next
+                return True
+
+            prev_node = current_node
+            current_node = current_node.next
 
         return False
 
@@ -90,10 +104,10 @@ class LinkedList:
         self.head = prev_node
 
 
-
-def test(n=20):
+if __name__ == "__main__":
     ll = LinkedList()
-    for i in range(n):
-        ll.insert(random.randint(0, 100))
-
-    return ll
+    n = 20
+    ll.insert(np.random.randint(0, 100, size=n))
+    print(ll)
+    ll.reverse()
+    print('reversed', ll)

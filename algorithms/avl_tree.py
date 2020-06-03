@@ -118,45 +118,9 @@ class AVLTree(BinarySearchTree):
 
 
 if __name__ == '__main__':
-    nums = list(range(10))
-    # nums = [3, 5, 1, 1, 4, 6, 8, 5, -4, -2, -8]
-    # nums = [33, 13, 52, 9, 21, 61, 8, 11]
-    avl = AVLTree()
-    avl.insert(nums)
-
-
-
-
-
-# """
-# 108. Convert Sorted Array to Binary Search Tree
-# https://leetcode.com/problems/convert-sorted-array-to-binary-search-tree/
-#
-# Given an array where elements are sorted in ascending order, convert it to a height balanced BST.
-#
-# For this problem, a height-balanced binary tree is defined as a binary tree in which the depth of the two subtrees of every node never differ by more than 1.
-#
-# Example:
-# Given the sorted array: [-10,-3,0,5,9],
-# One possible answer is: [0,-3,9,-10,null,5], which represents the following height balanced BST:
-#
-#       0
-#      / \
-#    -3   9
-#    /   /
-#  -10  5
-# """
-# from typing import List
-# class Solution:
-#     def sortedArrayToBST(self, nums: List[int]) -> TreeNode:
-#         tree = BST(nums)
-#         return tree
-#
-# class Solution:
-#     def sortedArrayToBST(self, nums: List[int]) -> TreeNode:
-#         tree = BST(nums)
-#         return tree
-#
-# # nums = [-10,-3,0,5,9]
-# nums = [0,5,9,-10,-3]
-# tree = Solution().sortedArrayToBST(nums)
+    print('work in progress')
+    # nums = list(range(10))
+    # # nums = [3, 5, 1, 1, 4, 6, 8, 5, -4, -2, -8]
+    # # nums = [33, 13, 52, 9, 21, 61, 8, 11]
+    # avl = AVLTree()
+    # avl.insert(nums)
