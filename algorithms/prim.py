@@ -1,15 +1,13 @@
 from collections import defaultdict, deque, OrderedDict
 from itertools import combinations
 from queue import PriorityQueue
-import random
 from typing import List, Tuple
 
-import numpy as np
-import networkx as nx
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 from graph import Graph
+
+"""
+ported to graph_weighted.py
+"""
 
 class WeightedGraph(Graph):
     def __init__(self, matrix: List[List], directed: bool):
@@ -31,33 +29,6 @@ class WeightedGraph(Graph):
                 matrix[dest][src] = weight
 
         return WeightedGraph(matrix, directed)
-
-    @staticmethod
-    def generate_graph(directed=False):
-        G = nx.petersen_graph()
-        # G = nx.tutte_graph()
-
-        for src, dest in nx.edges(G):
-            nx.set_edge_attributes(G, values={(src, dest): random.randint(1, 30)}, name='weight')
-
-        matrix = nx.to_numpy_array(G).astype(int).tolist()
-        graph = WeightedGraph(matrix, directed=directed)
-        return graph
-
-    def to_networkx_Graph(self):
-        edges = self.get_edges()
-        weighted = False
-        graph = nx.Graph()
-
-        if len(edges[0]) == 3:
-            weighted = True
-
-        if weighted:
-            graph.add_weighted_edges_from(edges)
-        else:
-            graph.add_edges_from(edges)
-
-        return graph
 
     def get_edges(self):
         edges = set()
@@ -156,37 +127,6 @@ class WeightedGraph(Graph):
 
         return dists
 
-    def bellman_ford(self, src):
-        nodes = self.get_nodes()
-        edges = self.get_edges()
-
-        # Step 1: fill the distance array and predecessor array
-        dist = [float("Inf")] * len(nodes)
-        # Mark the source vertex
-        dist[src] = 0
-
-        # Step 2: relax edges |V| - 1 times
-        for _ in range(len(nodes) - 1):
-            for src, dest, weight in edges:
-                if dist[src] != float("Inf") and dist[src] + weight < dist[dest]:
-                    dist[dest] = dist[src] + weight
-
-        # Step 3: detect negative cycle
-        # if value changes then we have a negative cycle in the graph
-        # and we cannot find the shortest distances
-        for src, dest, weight in edges:
-            if dist[src] != float("Inf") and dist[src] + weight < dist[dest]:
-                print("Graph contains negative weight cycle")
-                return False
-
-        # No negative weight cycle found!
-        # Print the distance and predecessor array
-        print("Vertex Distance from Source")
-        for i in range(len(nodes)):
-            print(f"{i}\t\t{dist[i]}")
-
-        return dist
-
     def prim_mst(self) -> List[Tuple]:
         """
         returns:
@@ -221,114 +161,8 @@ class WeightedGraph(Graph):
 
         return mst
 
-    def plot(self, path_to_color=None):
-        """
-        path_to_color
-        """
-
-        graph = self.to_networkx_Graph()
-        edges = graph.edges()
-
-        if path_to_color:
-            #TODO directed?
-            path_set = set([(src, dest) for src, dest, _ in path_to_color])
-            colors = ['#000000' if (u, v) not in path_set and (v, u) not in path_set else '#FF5454' for u, v in edges]
-
-        fig, ax = plt.subplots(figsize=(16, 12))
-        pos = nx.spring_layout(graph)
-
-        if path_to_color:
-            nx.draw(graph, pos=pos, with_labels=True, node_size=450,
-                node_color='#000000', font_size=16, font_color='#FFFFFF', edge_color=colors)
-        else:
-            nx.draw(graph, pos=pos, with_labels=True, node_size=450,
-                node_color='#000000', font_size=16, font_color='#FFFFFF')
-
-        labels = nx.get_edge_attributes(graph, 'weight')
-        nx.draw_networkx_edge_labels(graph, pos=pos, edge_labels=labels,
-                                         font_size=16)
-        plt.draw()
-
 
 if __name__ == "__main__":
-    # src, dest, weight
-    edges = [(0, 1, 3), (0, 2, 2), (0, 3, 8), (1, 4, 2), (2, 3, 5),
-             (2, 4, 4), (4, 5, 1), (5, 1, 2), (5, 2, 6)]
-    directed = True
-    graph = WeightedGraph.from_edges(edges, directed)
-
-    print('directed:', directed)
-    print('adjacency matrix')
-    for row in graph.adjacency_matrix:
-        print(row)
-
-    print('\nadjacency list')
-    adj_list = graph.get_adjacency_list()
-    for i, row in enumerate(adj_list):
-        print(f'{i}: {row}')
-
-
-    print('\nNetwork flow / Ford Fulkerson')
-    # ford fulkerson demo
-    adjacency_matrix = [
-        [0, 5, 14, 0, 0, 0, 0, 0, 0], # s
-        [0, 0, 4, 0, 3, 0, 0, 0, 0], # a
-        [0, 0, 0, 0, 0, 7, 0, 0, 0], # b
-        [0, 0, 0, 0, 0, 0, 6, 6, 0], # c
-        [0, 0, 0, 8, 0, 0, 0, 4, 0], # d
-        [0, 6, 0, 0, 3, 0, 0, 6, 0], # e
-        [0, 0, 0, 0, 0, 0, 0, 0, 10], # f
-        [0, 0, 0, 0, 0, 0, 0, 0, 8], # g
-        [0, 0, 0, 0, 0, 0, 0, 0, 0] # t
-    ]
-    directed = True
-    graph = WeightedGraph(adjacency_matrix, directed)
-    print('directed:', directed)
-
-    print('source -> dest, weight')
-    for src, dest, weight in sorted(graph.get_edges(), key=lambda x: x[0]):
-        print(f'{src} -> {dest}, {weight}')
-
-    print('\nadjacency matrix')
-    for row in graph.adjacency_matrix:
-        print(row)
-
-    source = 0 # s
-    sink = 8 # t
-    maxflow = graph.ford_fulkerson(source, sink)
-    print("\nMax Flow:", str(maxflow))
-
-    print('\nresidual graph')
-    for row in graph.adjacency_matrix:
-        print(row)
-
-
-    print("\nWeighted Graph / Dijkstra's Shortest Path")
-    edges = [
-        (0, 2, 9), (0, 6, 14), (0, 7, 15),
-        (2, 3, 24), (3, 1, 19), (3, 5, 2),
-        (4, 3, 6), (4, 1, 6), (5, 1, 16),
-        (5, 4, 11), (6, 5, 30), (6, 7, 5),
-        (6, 3, 18), (7, 5, 20), (7, 1, 44)
-    ]
-    directed = True
-    graph = WeightedGraph.from_edges(edges, directed)
-    print('directed:', directed)
-
-    print('source -> dest, weight')
-    for src, dest, weight in sorted(graph.get_edges(), key=lambda x: x[0]):
-        print(f'{src} -> {dest}, {weight}')
-
-    print('\nadjacency matrix')
-    for row in graph.adjacency_matrix:
-        print(row)
-
-    print('Shortest distance:')
-    src = 0
-    dest = 1
-    print(graph.dijkstra_shortest_path(src, dest))
-
-
     adjacency_matrix = [
         [0, 9, 75, 0, 0],
         [9, 0, 95, 19, 42],

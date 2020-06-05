@@ -2,6 +2,10 @@ from collections import defaultdict, deque
 from typing import List, Tuple
 from itertools import combinations
 
+"""
+ported to graph_weighted.py
+"""
+
 class WeightedGraph:
     def __init__(self, matrix: List[List]):
         self.adjacency_matrix = matrix
