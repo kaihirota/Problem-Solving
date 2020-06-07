@@ -14,6 +14,7 @@ from graph import Graph
 class WeightedGraph(Graph):
     def __init__(self, matrix: List[List], directed: bool):
         super().__init__(matrix, directed)
+        self.pos = None
 
     @staticmethod
     def from_edges(e: List[Tuple[int, int]], directed: bool):
@@ -156,20 +157,21 @@ class WeightedGraph(Graph):
 
         return dists
 
-    def bellman_ford(self, src):
+    def bellman_ford(self, src, dest_node=None):
         nodes = self.get_nodes()
         edges = self.get_edges()
 
-        # Step 1: fill the distance array and predecessor array
+        # Step 1: fill the distance array
         dist = [float("Inf")] * len(nodes)
         # Mark the source vertex
         dist[src] = 0
 
         # Step 2: relax edges |V| - 1 times
+        # it's |V| - 1 because for each node, you can take max of |V| - 1 edges to get there
         for _ in range(len(nodes) - 1):
             for src, dest, weight in edges:
-                if dist[src] != float("Inf") and dist[src] + weight < dist[dest]:
-                    dist[dest] = dist[src] + weight
+                if dist[src] != float("Inf"):
+                    dist[dest] = min(dist[src] + weight, dist[dest])
 
         # Step 3: detect negative cycle
         # if value changes then we have a negative cycle in the graph
@@ -178,6 +180,9 @@ class WeightedGraph(Graph):
             if dist[src] != float("Inf") and dist[src] + weight < dist[dest]:
                 print("Graph contains negative weight cycle")
                 return False
+
+        if dest_node is not None:
+            return dist[dest_node]
 
         # No negative weight cycle found!
         # Print the distance and predecessor array
@@ -221,7 +226,7 @@ class WeightedGraph(Graph):
 
         return mst
 
-    def plot(self, path_to_color=None):
+    def plot(self, path_to_color=None, update_pos=False):
         """
         path_to_color
         """
@@ -235,17 +240,19 @@ class WeightedGraph(Graph):
             colors = ['#000000' if (u, v) not in path_set and (v, u) not in path_set else '#FF5454' for u, v in edges]
 
         fig, ax = plt.subplots(figsize=(16, 12))
-        pos = nx.spring_layout(graph)
+
+        if self.pos == None or update_pos:
+            self.pos = nx.spring_layout(graph)
 
         if path_to_color:
-            nx.draw(graph, pos=pos, with_labels=True, node_size=450,
+            nx.draw(graph, pos=self.pos, with_labels=True, node_size=450,
                 node_color='#000000', font_size=16, font_color='#FFFFFF', edge_color=colors)
         else:
-            nx.draw(graph, pos=pos, with_labels=True, node_size=450,
+            nx.draw(graph, pos=self.pos, with_labels=True, node_size=450,
                 node_color='#000000', font_size=16, font_color='#FFFFFF')
 
         labels = nx.get_edge_attributes(graph, 'weight')
-        nx.draw_networkx_edge_labels(graph, pos=pos, edge_labels=labels,
+        nx.draw_networkx_edge_labels(graph, pos=self.pos, edge_labels=labels,
                                          font_size=16)
         plt.draw()
 
@@ -303,7 +310,7 @@ if __name__ == "__main__":
         print(row)
 
 
-    print("\nWeighted Graph / Dijkstra's Shortest Path")
+    print("\nWeighted Graph / Shortest distance")
     edges = [
         (0, 2, 9), (0, 6, 14), (0, 7, 15),
         (2, 3, 24), (3, 1, 19), (3, 5, 2),
@@ -323,10 +330,12 @@ if __name__ == "__main__":
     for row in graph.adjacency_matrix:
         print(row)
 
-    print('Shortest distance:')
     src = 0
     dest = 1
-    print(graph.dijkstra_shortest_path(src, dest))
+    print('Dijkstra Shortest distance:', graph.dijkstra_shortest_path(src, dest))
+    print('Bellman-Ford Shortest distance', graph.bellman_ford(src, dest))
+
+
 
 
     adjacency_matrix = [

@@ -40,6 +40,13 @@ class DoublyLinkedList(LinkedList):
             self.head.prev = newnode
             self.head = newnode
 
+    def insert_tail(self, value):
+        newnode = Node(value=value)
+
+        newnode.prev = self.tail
+        self.tail.next = newnode
+        self.tail = newnode
+
     def insertBefore(self, node, nodeToInsert):
         nodeToInsert.prev = node.prev
         nodeToInsert.next = node

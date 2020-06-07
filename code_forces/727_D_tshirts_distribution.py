@@ -55,7 +55,7 @@ NO
 3. candidates -> t node
 """
 
-from problem_solving.algorithms.ford_fulkerson import Graph
+from algorithms.graph_weighted import WeightedGraph
 from collections import defaultdict, deque
 
 # S, M, L, XL, XXL, XXXL = map(int, input().strip().split())
@@ -83,11 +83,11 @@ graph[0] = list(sizes)
 for row in graph:
     print(row)
 
-g = Graph(graph)
+g = WeightedGraph(graph, directed=True)
 source = 0
 sink = len(graph) - 1
 
-maxflow = g.FordFulkerson(source, sink)
+maxflow = g.ford_fulkerson(source, sink)
 
 if maxflow == N:
     print('YES')
