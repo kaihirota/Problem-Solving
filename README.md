@@ -1,3 +1,4 @@
-# 30-Day LeetCoding Challenge
+# Problem Solving
 
-https://leetcode.com/explore/other/card/30-day-leetcoding-challenge/
+- Coding problems solved on Leetcode / Hackerrank / etc
+- Coding problems from participated contests
