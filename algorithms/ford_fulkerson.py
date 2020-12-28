@@ -36,9 +36,18 @@ class WeightedGraph:
                     edges.add((j, i, self.adjacency_matrix[j][i]))
         return list(edges)
 
-    def BFS(self, s, t, parent):
-        # augments a path with residual capacity of at least 1
+    def _BFS(self, s, t, parent):
+        """
+        input:
+        s: int
+            source (not to be mistaken with parent, source refers to the root or the origin)
+        t: int
+            target / sink
+        parent: List 
+            maps nodes to a parent
+        """
 
+        # augments a path with residual capacity of at least 1
         visited = [False] * len(self.adjacency_matrix)
         visited[s] = True
         queue = deque()
@@ -57,21 +66,27 @@ class WeightedGraph:
         return True if visited[t] else False
 
     def ford_fulkerson(self, source, sink):
+        """
+        returns:
+            max_flow: int
+        """
         parent = [-1] * len(self.adjacency_matrix)
         max_flow = 0
 
-        while self.BFS(source, sink, parent):
-            # updates parent list with augmenting paths
+        # updates parent list with augmenting paths
+        while self._BFS(source, sink, parent):
             path_flow = float("Inf")
 
-            s = sink
+            s = v = sink
+
+            # find minimum capacity of an augmenting path
             while(s != source):
                 path_flow = min(path_flow, self.adjacency_matrix[parent[s]][s])
                 s = parent[s]
 
             max_flow += path_flow
 
-            v = sink
+            # update flow / capacity of residual graph
             while(v != source):
                 u = parent[v]
                 self.adjacency_matrix[u][v] -= path_flow
