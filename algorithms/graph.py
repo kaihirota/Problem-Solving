@@ -1,4 +1,3 @@
-from collections import defaultdict, deque
 from typing import List, Tuple
 from itertools import combinations
 
@@ -6,6 +5,9 @@ class Graph:
     def __init__(self, matrix: List[List], directed: bool):
         self.adjacency_matrix = matrix
         self.directed = directed
+
+    def __str__(self):
+        return '\n'.join([str(row) for row in self.adjacency_matrix])
 
     @staticmethod
     def from_edges(e: List[Tuple[int, int]], directed: bool):

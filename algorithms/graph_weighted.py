@@ -1,4 +1,5 @@
 from collections import defaultdict, deque, OrderedDict
+import copy
 from itertools import combinations
 from queue import PriorityQueue
 import random
@@ -10,6 +11,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from graph import Graph
+
+# custom type hint
+Source = Dest = Weight = int
+Edge = Tuple[Source, Dest, Weight]
+Edges = List[Edge]
 
 class WeightedGraph(Graph):
     def __init__(self, matrix: List[List], directed: bool):
@@ -60,7 +66,7 @@ class WeightedGraph(Graph):
 
         return graph
 
-    def get_edges(self):
+    def get_edges(self) -> Edges:
         edges = set()
 
         for i in range(len(self.adjacency_matrix)):
@@ -75,7 +81,7 @@ class WeightedGraph(Graph):
                         edges.add((j, i, self.adjacency_matrix[j][i]))
         return list(edges)
 
-    def BFS(self, s, t, parent):
+    def _BFS(self, s, t, parent):
         # augments a path with residual capacity of at least 1
 
         visited = [False] * len(self.adjacency_matrix)
@@ -95,11 +101,14 @@ class WeightedGraph(Graph):
 
         return True if visited[t] else False
 
-    def ford_fulkerson(self, source, sink):
+    def ford_fulkerson(self, source, sink) -> int:
+        """
+        Compute and return the max flow
+        """
         parent = [-1] * len(self.adjacency_matrix)
         max_flow = 0
 
-        while self.BFS(source, sink, parent):
+        while self._BFS(source, sink, parent):
             # updates parent list with augmenting paths
             path_flow = float("Inf")
 
@@ -119,9 +128,9 @@ class WeightedGraph(Graph):
 
         return max_flow
 
-    def dijkstra_shortest_path(self, src, dest=None):
+    def dijkstra_shortest_path(self, src, dest=None) -> List[int]:
         """
-        computes shortest distance from src to every other node
+        Compute the distance of shortest path from a source node to every other node
 
         input:
             src: index of source node between 0 and n-1
@@ -157,7 +166,11 @@ class WeightedGraph(Graph):
 
         return dists
 
-    def bellman_ford(self, src, dest_node=None):
+    def bellman_ford(self, src, dest_node=None) -> List[int]:
+        """
+        Compute the distance of shortest path from a node to every other node. 
+        Unlike Dijkstra's algorithm, Bellman-Ford can handle negative edges.
+        """
         nodes = self.get_nodes()
         edges = self.get_edges()
 
@@ -192,7 +205,22 @@ class WeightedGraph(Graph):
 
         return dist
 
-    def prim_mst(self) -> List[Tuple]:
+    def floyd_warshall(self) -> List[List[int]]:
+        """
+        Compute the distance of shortest path between every pair of nodes. 
+        It does not work for the graphs with negative cycles (where the sum of the edges in a cycle is negative).
+        However it can be used for detecting negative cycles: any([graph[i][i] < 0 for i in range(len(graph))])
+        """
+        distance = copy.deepcopy(self.adjacency_matrix)
+        n = len(distance)
+
+        for k in range(n):
+            for i in range(n):
+                for j in range(n):
+                    distance[i][j] = min(distance[i][j], distance[i][k] + distance[k][j])
+        return distance
+
+    def prim_mst(self) -> Edges:
         """
         returns:
             mst: minimum spanning tree. List of tuples of form (source, destination, weight)
@@ -224,7 +252,49 @@ class WeightedGraph(Graph):
             mst.append((src, dest, wt))
             n_edges += 1
 
-        return mst
+        return sorted(mst)
+
+    def _find(self, parent, i):
+        if parent[i] == i:
+            return i
+        return self._find(parent, parent[i])
+
+    def _apply_union(self, parent, rank, x, y):
+        xroot = self._find(parent, x)
+        yroot = self._find(parent, y)
+
+        if rank[xroot] < rank[yroot]:
+            parent[xroot] = yroot
+        elif rank[xroot] > rank[yroot]:
+            parent[yroot] = xroot
+        else:
+            parent[yroot] = xroot
+            rank[xroot] += 1
+
+    def kruskal_mst(self) -> Edges:
+        result = []
+        i, e = 0, 0
+        edges = sorted(self.get_edges(), key=lambda x: x[2])
+        n_nodes = len(self.adjacency_matrix)
+        parent = []
+        rank = []
+
+        for node in range(n_nodes):
+            parent.append(node)
+            rank.append(0)
+        
+        while e < n_nodes - 1:
+            u, v, w = edges[i]
+            x = self._find(parent, u)
+            y = self._find(parent, v)
+            i += 1
+
+            if x != y:
+                e += 1
+                result.append([u, v, w])
+                self._apply_union(parent, rank, x, y)
+
+        return sorted(result)
 
     def plot(self, path_to_color=None, update_pos=False):
         """
@@ -338,26 +408,32 @@ if __name__ == "__main__":
 
 
 
-    adjacency_matrix = [
-        [0, 9, 75, 0, 0],
-        [9, 0, 95, 19, 42],
-        [75, 95, 0, 51, 66],
-        [0, 19, 51, 0, 31],
-        [0, 42, 66, 31, 0]
-    ]
-    directed = False
-    graph = WeightedGraph(adjacency_matrix, directed)
-    print('directed:', directed)
+    # adjacency_matrix = [
+    #     [0, 9, 75, 0, 0],
+    #     [9, 0, 95, 19, 42],
+    #     [75, 95, 0, 51, 66],
+    #     [0, 19, 51, 0, 31],
+    #     [0, 42, 66, 31, 0]
+    # ]
+    # directed = False
+    # graph = WeightedGraph(adjacency_matrix, directed)
+    # print('directed:', directed)
 
     print('source -> dest, weight')
     for src, dest, weight in sorted(graph.get_edges(), key=lambda x: x[0]):
         print(f'{src} -> {dest}, {weight}')
 
     print('\nadjacency matrix')
-    for row in graph.adjacency_matrix:
-        print(row)
+    print(graph)
 
     print("\nPrim's Algorithm")
     mst = graph.prim_mst()
-    for src, dest, weight in mst:
-        print(f'{src} -> {dest}, {weight}')
+    # for src, dest, weight in mst:
+    #     print(f'{src} -> {dest}, {weight}')
+    print(sum([edge[2] for edge in mst]))
+
+    print("\nKruskal's Algorithm")
+    mst = graph.kruskal_mst()
+    # for src, dest, weight in mst:
+    #     print(f'{src} -> {dest}, {weight}')
+    print(sum([edge[2] for edge in mst]))
