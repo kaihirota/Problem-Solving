@@ -16,10 +16,9 @@ Edge = Tuple[Node, Node, Weight]
 
 
 class WeightedGraph(MyGraph):
-    def __init__(self, matrix: List[List[Weight]], is_residual=False):
+    def __init__(self, matrix: List[List[Weight]]):
         super().__init__(matrix, is_directed=True)
         self.pos = None
-        self.is_residual = is_residual
 
     @staticmethod
     def from_edges(edges: List[Edge]):
@@ -73,10 +72,10 @@ class WeightedGraph(MyGraph):
         Compute and return the max flow
         """
         parents = [-1] * len(self._adjacency_matrix)
-        residual_graph = self._adjacency_matrix.copy()
+        residual_graph = [row.copy() for row in self.get_adjacency_matrix()]
         max_flow = 0
 
-        def _BFS(s, t, parent, residual_graph):
+        def _BFS(s, t, residual_graph):
             # augments a path with residual capacity of at least 1
 
             visited = [False] * len(residual_graph)
@@ -92,11 +91,11 @@ class WeightedGraph(MyGraph):
                     if not visited[i] and val > 0:
                         visited[i] = True
                         queue.append(i)
-                        parent[i] = u
+                        parents[i] = u
 
             return visited[t]
 
-        while _BFS(source, sink, parents, residual_graph):
+        while _BFS(source, sink, residual_graph):
             # updates parent list with augmenting paths
             path_flow = float("Inf")
             curr_node = sink
@@ -113,7 +112,7 @@ class WeightedGraph(MyGraph):
                 residual_graph[curr_node][parent_node] += path_flow
                 curr_node = parents[curr_node]
 
-        return max_flow, WeightedGraph(residual_graph, is_residual=True)
+        return max_flow, residual_graph
 
     def dijkstra_shortest_path(self, src: int, dest: Optional[int] = -1) -> List[int]:
         """
@@ -283,12 +282,13 @@ class WeightedGraph(MyGraph):
 
         return sorted(result)
 
-    def plot(self, path_to_highlight: Optional[List[Edge]] = []):
+    def plot(self, path_to_highlight: Optional[List[Edge]] = [], residual_graph: Optional[List[List[int]]] = []):
         fig, ax = plt.subplots(figsize=(16, 12))
         colors = []
         path_set = set([(src, dest) for src, dest, _ in path_to_highlight])
         graph = self.to_networkx_Graph()
-        self.pos = nx.spring_layout(graph)
+        if self.pos is None:
+            self.pos = nx.spring_layout(graph)
         for u, v in graph.edges():
             if (u, v) not in path_set:
                 colors += '#000000',
@@ -301,9 +301,11 @@ class WeightedGraph(MyGraph):
                 edge_color=colors, arrows=self.is_directed, arrowsize=20, arrowstyle='-|>')
 
         labels = nx.get_edge_attributes(graph, 'weight')
-        if self.is_residual:
-            for src, dest in labels.keys():
-                labels[(src, dest)] = f"{self._adjacency_matrix[dest][src]} / {self._adjacency_matrix[src][dest]}"
+        for src, dest in labels.keys():
+            if residual_graph and residual_graph[dest][src]:
+                labels[(src, dest)] = f"{residual_graph[dest][src]} / {self._adjacency_matrix[src][dest]}"
+            else:
+                labels[(src, dest)] = f"0 / {self._adjacency_matrix[src][dest]}"
         nx.draw_networkx_edge_labels(graph, pos=self.pos, edge_labels=labels, font_size=16)
         plt.draw()
 
