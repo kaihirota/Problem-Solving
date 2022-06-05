@@ -83,7 +83,7 @@ graph[0] = list(sizes)
 for row in graph:
     print(row)
 
-g = WeightedGraph(graph, directed=True)
+g = WeightedGraph(graph, is_directed=True)
 source = 0
 sink = len(graph) - 1
 

@@ -1,134 +1,121 @@
-from collections import defaultdict, deque, OrderedDict
 import copy
+import random
+from collections import deque
 from itertools import combinations
 from queue import PriorityQueue
-import random
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
-import numpy as np
-import networkx as nx
 import matplotlib.pyplot as plt
-import seaborn as sns
+import networkx as nx
 
-from graph import Graph
+from mygraph import MyGraph
 
 # custom type hint
-Source = Dest = Weight = int
-Edge = Tuple[Source, Dest, Weight]
-Edges = List[Edge]
+Node = Weight = int
+Edge = Tuple[Node, Node, Weight]
 
-class WeightedGraph(Graph):
-    def __init__(self, matrix: List[List], directed: bool):
-        super().__init__(matrix, directed)
+
+class WeightedGraph(MyGraph):
+    def __init__(self, matrix: List[List[Weight]], is_residual=False):
+        super().__init__(matrix, is_directed=True)
         self.pos = None
+        self.is_residual = is_residual
 
     @staticmethod
-    def from_edges(e: List[Tuple[int, int]], directed: bool):
+    def from_edges(edges: List[Edge]):
         """assumption: nodes are from 0 to n - 1"""
-        edges = [(src, dst) for src, dst, weight in e]
         nodes = set(sorted([item for elem in edges for item in elem]))
-        matrix = [[0] * len(nodes) for i in range(len(nodes))]
+        matrix = [[0] * len(nodes) for _ in range(len(nodes))]
 
-        for src, dest, weight in e:
+        for src, dest, weight in edges:
             assert src != dest, 'source and destination must be different'
 
             matrix[src][dest] = weight
 
-            if directed is False:
-                matrix[dest][src] = weight
-
-        return WeightedGraph(matrix, directed)
+        return WeightedGraph(matrix)
 
     @staticmethod
-    def generate_graph(directed=False):
-        G = nx.petersen_graph()
-        # G = nx.tutte_graph()
+    def generate_random_dag(n_nodes: int):
+        assert n_nodes > 3
+        # already sorted in topological ordering
+        edges = []
+        for src, dest in combinations(range(n_nodes), 2):
+            capacity = random.randint(0, 15)
+            edges += (src, dest, capacity),
 
+        return WeightedGraph.from_edges(edges)
+
+    @staticmethod
+    def generate_graph():
+        G = nx.petersen_graph()
         for src, dest in nx.edges(G):
             nx.set_edge_attributes(G, values={(src, dest): random.randint(1, 30)}, name='weight')
 
         matrix = nx.to_numpy_array(G).astype(int).tolist()
-        graph = WeightedGraph(matrix, directed=directed)
-        return graph
+        return WeightedGraph(matrix)
 
     def to_networkx_Graph(self):
-        edges = self.get_edges()
-        weighted = False
+        edges = [(src, dest, cap) for src, dest, cap in self.get_edges()]
         graph = nx.Graph()
-
-        if len(edges[0]) == 3:
-            weighted = True
-
-        if weighted:
-            graph.add_weighted_edges_from(edges)
-        else:
-            graph.add_edges_from(edges)
-
+        graph.add_weighted_edges_from(edges)
         return graph
 
-    def get_edges(self) -> Edges:
-        edges = set()
+    def get_edges(self) -> List[Edge]:
+        edges = []
+        for i in range(len(self._adjacency_matrix)):
+            for j in range(len(self._adjacency_matrix[0])):
+                if self._adjacency_matrix[i][j] != 0:
+                    edges += (i, j, self._adjacency_matrix[i][j]),
+        return sorted(edges)
 
-        for i in range(len(self.adjacency_matrix)):
-            if self.directed == False:
-                start = i + 1
-            else:
-                start = 0
-            for j in range(start, len(self.adjacency_matrix[0])):
-                if self.adjacency_matrix[i][j] != 0:
-                    edges.add((i, j, self.adjacency_matrix[i][j]))
-                    if self.directed == False and self.adjacency_matrix[j][i] != 0:
-                        edges.add((j, i, self.adjacency_matrix[j][i]))
-        return list(edges)
-
-    def _BFS(self, s, t, parent):
-        # augments a path with residual capacity of at least 1
-
-        visited = [False] * len(self.adjacency_matrix)
-        visited[s] = True
-        queue = deque()
-        queue.append(s)
-
-        while queue:
-            u = queue.popleft()
-
-            # look at outgoing edges from node u, append edges
-            for i, val in enumerate(self.adjacency_matrix[u]):
-                if visited[i] == False and val > 0:
-                    visited[i] = True
-                    queue.append(i)
-                    parent[i] = u
-
-        return True if visited[t] else False
-
-    def ford_fulkerson(self, source, sink) -> int:
+    def ford_fulkerson(self, source: int, sink: int) -> int:
         """
         Compute and return the max flow
         """
-        parent = [-1] * len(self.adjacency_matrix)
+        parents = [-1] * len(self._adjacency_matrix)
+        residual_graph = self._adjacency_matrix.copy()
         max_flow = 0
 
-        while self._BFS(source, sink, parent):
+        def _BFS(s, t, parent, residual_graph):
+            # augments a path with residual capacity of at least 1
+
+            visited = [False] * len(residual_graph)
+            visited[s] = True
+            queue = deque()
+            queue.append(s)
+
+            while queue:
+                u = queue.popleft()
+
+                # look at outgoing edges from node u, append edges
+                for i, val in enumerate(residual_graph[u]):
+                    if not visited[i] and val > 0:
+                        visited[i] = True
+                        queue.append(i)
+                        parent[i] = u
+
+            return visited[t]
+
+        while _BFS(source, sink, parents, residual_graph):
             # updates parent list with augmenting paths
             path_flow = float("Inf")
-
-            s = sink
-            while(s != source):
-                path_flow = min(path_flow, self.adjacency_matrix[parent[s]][s])
-                s = parent[s]
+            curr_node = sink
+            while (curr_node != source):
+                path_flow = min(path_flow, residual_graph[parents[curr_node]][curr_node])
+                curr_node = parents[curr_node]
 
             max_flow += path_flow
 
-            v = sink
-            while(v != source):
-                u = parent[v]
-                self.adjacency_matrix[u][v] -= path_flow
-                self.adjacency_matrix[v][u] += path_flow
-                v = parent[v]
+            curr_node = sink
+            while (curr_node != source):
+                parent_node = parents[curr_node]
+                residual_graph[parent_node][curr_node] -= path_flow
+                residual_graph[curr_node][parent_node] += path_flow
+                curr_node = parents[curr_node]
 
-        return max_flow
+        return max_flow, WeightedGraph(residual_graph, is_residual=True)
 
-    def dijkstra_shortest_path(self, src, dest=None) -> List[int]:
+    def dijkstra_shortest_path(self, src: int, dest: Optional[int] = -1) -> List[int]:
         """
         Compute the distance of shortest path from a source node to every other node
 
@@ -138,10 +125,10 @@ class WeightedGraph(Graph):
         returns:
             dist: integer distance to src node if dest != None. Else, entire distance array will be returned.
         """
-        dists = [float('inf')] * len(self.adjacency_matrix)
+        dists = [float('inf')] * len(self._adjacency_matrix)
 
         q = PriorityQueue()
-        q.put([0, src]) # (distance, node)
+        q.put([0, src])  # (distance, node)
 
         while not q.empty():
             # pop off nearest node (given the path taken so far) from src
@@ -156,10 +143,10 @@ class WeightedGraph(Graph):
 
             if u == dest:
                 # shortest path to destination found
-                return dists[dest]
+                return dists[int(dest)]
 
             # add neighbors of u to q
-            neighbors = self.adjacency_matrix[u]
+            neighbors = self._adjacency_matrix[u]
             for v, weight_v in enumerate(neighbors):
                 if weight_v > 0:
                     q.put([weight_u + weight_v, v])
@@ -192,7 +179,7 @@ class WeightedGraph(Graph):
         for src, dest, weight in edges:
             if dist[src] != float("Inf") and dist[src] + weight < dist[dest]:
                 print("Graph contains negative weight cycle")
-                return False
+                return
 
         if dest_node is not None:
             return dist[dest_node]
@@ -211,7 +198,7 @@ class WeightedGraph(Graph):
         It does not work for the graphs with negative cycles (where the sum of the edges in a cycle is negative).
         However it can be used for detecting negative cycles: any([graph[i][i] < 0 for i in range(len(graph))])
         """
-        distance = copy.deepcopy(self.adjacency_matrix)
+        distance = copy.deepcopy(self._adjacency_matrix)
         n = len(distance)
 
         for k in range(n):
@@ -220,12 +207,12 @@ class WeightedGraph(Graph):
                     distance[i][j] = min(distance[i][j], distance[i][k] + distance[k][j])
         return distance
 
-    def prim_mst(self) -> Edges:
+    def prim_mst(self) -> List[Edge]:
         """
         returns:
             mst: minimum spanning tree. List of tuples of form (source, destination, weight)
         """
-        n_nodes = len(self.adjacency_matrix)
+        n_nodes = len(self._adjacency_matrix)
         n_edges = 0
         visited = [False] * n_nodes
         visited[0] = True
@@ -240,7 +227,7 @@ class WeightedGraph(Graph):
             for u in range(n_nodes):
                 if visited[u] == True:
                     for v in range(n_nodes):
-                        weight = self.adjacency_matrix[u][v]
+                        weight = self._adjacency_matrix[u][v]
 
                         # next unvisited node
                         if visited[v] == False and weight != 0:
@@ -271,18 +258,18 @@ class WeightedGraph(Graph):
             parent[yroot] = xroot
             rank[xroot] += 1
 
-    def kruskal_mst(self) -> Edges:
+    def kruskal_mst(self) -> List[Edge]:
         result = []
         i, e = 0, 0
         edges = sorted(self.get_edges(), key=lambda x: x[2])
-        n_nodes = len(self.adjacency_matrix)
+        n_nodes = len(self._adjacency_matrix)
         parent = []
         rank = []
 
         for node in range(n_nodes):
             parent.append(node)
             rank.append(0)
-        
+
         while e < n_nodes - 1:
             u, v, w = edges[i]
             x = self._find(parent, u)
@@ -296,47 +283,39 @@ class WeightedGraph(Graph):
 
         return sorted(result)
 
-    def plot(self, path_to_color=None, update_pos=False):
-        """
-        path_to_color
-        """
-
-        graph = self.to_networkx_Graph()
-        edges = graph.edges()
-
-        if path_to_color:
-            #TODO directed?
-            path_set = set([(src, dest) for src, dest, _ in path_to_color])
-            colors = ['#000000' if (u, v) not in path_set and (v, u) not in path_set else '#FF5454' for u, v in edges]
-
+    def plot(self, path_to_highlight: Optional[List[Edge]] = []):
         fig, ax = plt.subplots(figsize=(16, 12))
+        colors = []
+        path_set = set([(src, dest) for src, dest, _ in path_to_highlight])
+        graph = self.to_networkx_Graph()
+        self.pos = nx.spring_layout(graph)
+        for u, v in graph.edges():
+            if (u, v) not in path_set:
+                colors += '#000000',
+            else:
+                colors += '#FF5454',
 
-        if self.pos == None or update_pos:
-            self.pos = nx.spring_layout(graph)
-
-        if path_to_color:
-            nx.draw(graph, pos=self.pos, with_labels=True, node_size=450,
-                node_color='#000000', font_size=16, font_color='#FFFFFF', edge_color=colors)
-        else:
-            nx.draw(graph, pos=self.pos, with_labels=True, node_size=450,
-                node_color='#000000', font_size=16, font_color='#FFFFFF')
+        nx.draw(graph, pos=self.pos, with_labels=True,
+                font_size=16, font_color='#000000',
+                node_size=500, node_color='#33A4FF',
+                edge_color=colors, arrows=self.is_directed, arrowsize=20, arrowstyle='-|>')
 
         labels = nx.get_edge_attributes(graph, 'weight')
-        nx.draw_networkx_edge_labels(graph, pos=self.pos, edge_labels=labels,
-                                         font_size=16)
+        if self.is_residual:
+            for src, dest in labels.keys():
+                labels[(src, dest)] = f"{self._adjacency_matrix[dest][src]} / {self._adjacency_matrix[src][dest]}"
+        nx.draw_networkx_edge_labels(graph, pos=self.pos, edge_labels=labels, font_size=16)
         plt.draw()
 
-
-if __name__ == "__main__":
+def demo():
     # src, dest, weight
     edges = [(0, 1, 3), (0, 2, 2), (0, 3, 8), (1, 4, 2), (2, 3, 5),
              (2, 4, 4), (4, 5, 1), (5, 1, 2), (5, 2, 6)]
-    directed = True
-    graph = WeightedGraph.from_edges(edges, directed)
 
-    print('directed:', directed)
+    graph = WeightedGraph.from_edges(edges, directed = True)
+
     print('adjacency matrix')
-    for row in graph.adjacency_matrix:
+    for row in graph.get_adjacency_matrix():
         print(row)
 
     print('\nadjacency list')
@@ -344,23 +323,21 @@ if __name__ == "__main__":
     for i, row in enumerate(adj_list):
         print(f'{i}: {row}')
 
-
     print('\nNetwork flow / Ford Fulkerson')
     # ford fulkerson demo
     adjacency_matrix = [
-        [0, 5, 14, 0, 0, 0, 0, 0, 0], # s
-        [0, 0, 4, 0, 3, 0, 0, 0, 0], # a
-        [0, 0, 0, 0, 0, 7, 0, 0, 0], # b
-        [0, 0, 0, 0, 0, 0, 6, 6, 0], # c
-        [0, 0, 0, 8, 0, 0, 0, 4, 0], # d
-        [0, 6, 0, 0, 3, 0, 0, 6, 0], # e
-        [0, 0, 0, 0, 0, 0, 0, 0, 10], # f
-        [0, 0, 0, 0, 0, 0, 0, 0, 8], # g
-        [0, 0, 0, 0, 0, 0, 0, 0, 0] # t
+        [0, 5, 14, 0, 0, 0, 0, 0, 0],  # s
+        [0, 0, 4, 0, 3, 0, 0, 0, 0],  # a
+        [0, 0, 0, 0, 0, 7, 0, 0, 0],  # b
+        [0, 0, 0, 0, 0, 0, 6, 6, 0],  # c
+        [0, 0, 0, 8, 0, 0, 0, 4, 0],  # d
+        [0, 6, 0, 0, 3, 0, 0, 6, 0],  # e
+        [0, 0, 0, 0, 0, 0, 0, 0, 10],  # f
+        [0, 0, 0, 0, 0, 0, 0, 0, 8],  # g
+        [0, 0, 0, 0, 0, 0, 0, 0, 0]  # t
     ]
-    directed = True
-    graph = WeightedGraph(adjacency_matrix, directed)
-    print('directed:', directed)
+
+    graph = WeightedGraph(adjacency_matrix, directed = True)
 
     print('source -> dest, weight')
     for src, dest, weight in sorted(graph.get_edges(), key=lambda x: x[0]):
@@ -370,15 +347,14 @@ if __name__ == "__main__":
     for row in graph.adjacency_matrix:
         print(row)
 
-    source = 0 # s
-    sink = 8 # t
+    source = 0  # s
+    sink = 8  # t
     maxflow = graph.ford_fulkerson(source, sink)
     print("\nMax Flow:", str(maxflow))
 
     print('\nresidual graph')
     for row in graph.adjacency_matrix:
         print(row)
-
 
     print("\nWeighted Graph / Shortest distance")
     edges = [
@@ -404,9 +380,6 @@ if __name__ == "__main__":
     dest = 1
     print('Dijkstra Shortest distance:', graph.dijkstra_shortest_path(src, dest))
     print('Bellman-Ford Shortest distance', graph.bellman_ford(src, dest))
-
-
-
 
     # adjacency_matrix = [
     #     [0, 9, 75, 0, 0],
@@ -437,3 +410,7 @@ if __name__ == "__main__":
     # for src, dest, weight in mst:
     #     print(f'{src} -> {dest}, {weight}')
     print(sum([edge[2] for edge in mst]))
+
+
+if __name__ == "__main__":
+    demo()

@@ -3,52 +3,52 @@ from itertools import combinations
 from queue import PriorityQueue
 from typing import List, Tuple
 
-from graph import Graph
+from mygraph import MyGraph
 
 """
 ported to graph_weighted.py
 """
 
-class WeightedGraph(Graph):
-    def __init__(self, matrix: List[List], directed: bool):
-        super().__init__(matrix, directed)
+class WeightedMyGraph(MyGraph):
+    def __init__(self, matrix: List[List], is_directed: bool):
+        super().__init__(matrix, is_directed)
 
     @staticmethod
-    def from_edges(e: List[Tuple[int, int]], directed: bool):
+    def from_edges(edges: List[Tuple[int, int]], is_directed: bool):
         """assumption: nodes are from 0 to n - 1"""
-        edges = [(src, dst) for src, dst, weight in e]
+        edges = [(src, dst) for src, dst, weight in edges]
         nodes = set(sorted([item for elem in edges for item in elem]))
         matrix = [[0] * len(nodes) for i in range(len(nodes))]
 
-        for src, dest, weight in e:
+        for src, dest, weight in edges:
             assert src != dest, 'source and destination must be different'
 
             matrix[src][dest] = weight
 
-            if directed is False:
+            if is_directed is False:
                 matrix[dest][src] = weight
 
-        return WeightedGraph(matrix, directed)
+        return WeightedMyGraph(matrix, is_directed)
 
     def get_edges(self):
         edges = set()
 
-        for i in range(len(self.adjacency_matrix)):
-            if self.directed == False:
+        for i in range(len(self._adjacency_matrix)):
+            if self.is_directed == False:
                 start = i + 1
             else:
                 start = 0
-            for j in range(start, len(self.adjacency_matrix[0])):
-                if self.adjacency_matrix[i][j] != 0:
-                    edges.add((i, j, self.adjacency_matrix[i][j]))
-                    if self.directed == False and self.adjacency_matrix[j][i] != 0:
-                        edges.add((j, i, self.adjacency_matrix[j][i]))
+            for j in range(start, len(self._adjacency_matrix[0])):
+                if self._adjacency_matrix[i][j] != 0:
+                    edges.add((i, j, self._adjacency_matrix[i][j]))
+                    if self.is_directed == False and self._adjacency_matrix[j][i] != 0:
+                        edges.add((j, i, self._adjacency_matrix[j][i]))
         return list(edges)
 
     def BFS(self, s, t, parent):
         # augments a path with residual capacity of at least 1
 
-        visited = [False] * len(self.adjacency_matrix)
+        visited = [False] * len(self._adjacency_matrix)
         visited[s] = True
         queue = deque()
         queue.append(s)
@@ -57,7 +57,7 @@ class WeightedGraph(Graph):
             u = queue.popleft()
 
             # look at outgoing edges from node u, append edges
-            for i, val in enumerate(self.adjacency_matrix[u]):
+            for i, val in enumerate(self._adjacency_matrix[u]):
                 if visited[i] == False and val > 0:
                     visited[i] = True
                     queue.append(i)
@@ -66,7 +66,7 @@ class WeightedGraph(Graph):
         return True if visited[t] else False
 
     def ford_fulkerson(self, source, sink):
-        parent = [-1] * len(self.adjacency_matrix)
+        parent = [-1] * len(self._adjacency_matrix)
         max_flow = 0
 
         while self.BFS(source, sink, parent):
@@ -75,7 +75,7 @@ class WeightedGraph(Graph):
 
             s = sink
             while(s != source):
-                path_flow = min(path_flow, self.adjacency_matrix[parent[s]][s])
+                path_flow = min(path_flow, self._adjacency_matrix[parent[s]][s])
                 s = parent[s]
 
             max_flow += path_flow
@@ -83,8 +83,8 @@ class WeightedGraph(Graph):
             v = sink
             while(v != source):
                 u = parent[v]
-                self.adjacency_matrix[u][v] -= path_flow
-                self.adjacency_matrix[v][u] += path_flow
+                self._adjacency_matrix[u][v] -= path_flow
+                self._adjacency_matrix[v][u] += path_flow
                 v = parent[v]
 
         return max_flow
@@ -99,7 +99,7 @@ class WeightedGraph(Graph):
         returns:
             dist: integer distance to src node if dest != None. Else, entire distance array will be returned.
         """
-        dists = [float('inf')] * len(self.adjacency_matrix)
+        dists = [float('inf')] * len(self._adjacency_matrix)
 
         q = PriorityQueue()
         q.put([0, src]) # (distance, node)
@@ -120,7 +120,7 @@ class WeightedGraph(Graph):
                 return dists[dest]
 
             # add neighbors of u to q
-            neighbors = self.adjacency_matrix[u]
+            neighbors = self._adjacency_matrix[u]
             for v, weight_v in enumerate(neighbors):
                 if weight_v > 0:
                     q.put([weight_u + weight_v, v])
@@ -132,7 +132,7 @@ class WeightedGraph(Graph):
         returns:
             mst: minimum spanning tree. List of tuples of form (source, destination, weight)
         """
-        n_nodes = len(self.adjacency_matrix)
+        n_nodes = len(self._adjacency_matrix)
         n_edges = 0
         visited = [False] * n_nodes
         visited[0] = True
@@ -147,7 +147,7 @@ class WeightedGraph(Graph):
             for u in range(n_nodes):
                 if visited[u] == True:
                     for v in range(n_nodes):
-                        weight = self.adjacency_matrix[u][v]
+                        weight = self._adjacency_matrix[u][v]
 
                         # next unvisited node
                         if visited[v] == False and weight != 0:
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         [0, 42, 66, 31, 0]
     ]
     directed = False
-    graph = WeightedGraph(adjacency_matrix, directed)
+    graph = WeightedMyGraph(adjacency_matrix, directed)
     print('directed:', directed)
 
     print('source -> dest, weight')
@@ -179,7 +179,7 @@ if __name__ == "__main__":
         print(f'{src} -> {dest}, {weight}')
 
     print('\nadjacency matrix')
-    for row in graph.adjacency_matrix:
+    for row in graph._adjacency_matrix:
         print(row)
 
     print("\nPrim's Algorithm")
